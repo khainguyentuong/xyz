@@ -1,2 +1,2 @@
 #Purpose 
-Source code for the blog entry 
+Source code for the word entry 
