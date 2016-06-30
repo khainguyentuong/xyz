@@ -1,0 +1,16 @@
+apply plugin: "org.flywaydb.flyway"
+
+flyway {
+    /*
+    url="jdbc:h2:file:./target/word"
+	driver = "org.h2.Driver"
+	user = "sa"
+	*/
+
+    url = "jdbc:mysql://$dbUrl"
+    user = "$dbUsername"
+    password = "$dbPassword"
+    schemas = ["$dbSchema"]
+    validateOnMigrate = "true"
+    sqlMigrationPrefix = "word_"
+}

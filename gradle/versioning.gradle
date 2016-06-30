@@ -5,10 +5,19 @@ props.each({
     project.ext.set(it.key, it.value)
 })
 
-allprojects {
-    ext.buildTimestamp = new Date().format("yyyy-MM-dd HH:mm:ss")
-    project.version = new ProjectVersion("${MAJOR_RELEASE_ID}", "${MINOR_RELEASE_ID}", System.env.BUILD_NUMBER)
+ext.buildTimestamp = new Date().format("yyyy-MM-dd HH:mm:ss")
+
+if (System.env.BUILD_NUMBER) {
+    ext.buildId = System.env.BUILD_NUMBER
 }
+else if ("${BUILD_NUMBER}") {
+    ext.buildId = "${BUILD_NUMBER}"
+}
+else {
+    ext.buildId = buildTimestamp
+}
+
+project.version = new ProjectVersion("${MAJOR_RELEASE_ID}", "${MINOR_RELEASE_ID}", "$buildId")
 
 class ProjectVersion {
     final String major

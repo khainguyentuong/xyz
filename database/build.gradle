@@ -1,5 +1,14 @@
-apply plugin: "base"
-apply plugin: "org.flywaydb.flyway"
+apply plugin: "application"
+apply from: file("$rootProject.projectDir/gradle/flyway.gradle")
+
+def dbdeployDir = System.getenv()["HOMEDRIVE"] + "/database"
+
+mainClassName = "org.collegeboard.flywaydb.flywayMigrate"
+applicationName = "flywaydb"
+applicationDefaultJvmArgs = [
+        "-DconfigFile=$dbdeployDir/conf/config.properties",
+        "-DisClean=true",
+        "-Dlogback.configurationFile=$dbdeployDir/conf/logging.xml"]
 
 buildscript {
     repositories {
@@ -22,17 +31,54 @@ buildscript {
     }
 }
 
-flyway {
-    /*
-    url="jdbc:h2:file:./target/test"
-	driver = "org.h2.Driver"
-	user = "sa"
-	*/
-
-    url = "jdbc:mysql://localhost:3306"
-    user = "builder"
-    password = "builder"
-    schemas = ["test"]
-    validateOnMigrate = "true"
-    sqlMigrationPrefix = "test_"
+repositories {
+    maven {
+        url("$artifactoryLibraryRepo")
+        credentials {
+            username = "$artifactoryUsername"
+            password = "$artifactoryPassword"
+        }
+    }
 }
+
+dependencies {
+    compile "org.flywaydb:flyway-core:4.0.2"
+    compile "org.codehaus.groovy:groovy-all:2.3.11"
+    compile "ch.qos.logback:logback-core:1.1.3"
+    compile "ch.qos.logback:logback-classic:1.1.3"
+    compile "org.slf4j:slf4j-api:1.7.12"
+    runtime "mysql:mysql-connector-java:5.1.38"
+    testCompile "junit:junit:4.11"
+}
+
+task superClean {
+    doFirst {
+        delete "$dbdeployDir"
+    }
+}
+
+task copyLibs(type: Copy) {
+    from configurations.compile
+    from configurations.runtime
+    into "$dbdeployDir/lib"
+}
+
+task copyScripts(type: Copy) {
+    from "$projectDir/src/main/resources/db/migration"
+    into "$dbdeployDir/scripts"
+}
+
+task copyDist(type: Copy) {
+    dependsOn "installDist"
+    from "$buildDir/install/flywaydb"
+    into "$dbdeployDir"
+}
+
+task copyConfig(type: Copy) {
+    from "$projectDir/src/main/resources/conf/config.properties"
+    from "$projectDir/src/main/resources/conf/logging.xml"
+    into "$dbdeployDir/conf"
+}
+
+clean.dependsOn("superClean")
+defaultTasks("clean", "build", "copyLibs", "copyScripts", "copyDist", "copyConfig")

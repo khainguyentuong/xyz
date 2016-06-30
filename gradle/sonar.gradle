@@ -1,0 +1,15 @@
+apply plugin: "org.sonarqube"
+
+sonarqube {
+    properties {
+        property "sonar.host.url", "$sonarUrl"
+        property "sonar.login", "$sonarUsername"
+        property "sonar.password", "$sonarPassword"
+        property "sonar.projectName", "$project.name"
+        property "sonar.projectKey", "$group.$project.name"
+        property "sonar.links.ci", "$System.env.BUILD_URL"
+        property "sonar.links.scm", "$System.env.GIT_URL"
+        property "sonar.jacoco.reportPath", "$buildDir.name/jacoco.exec"
+        property "sonar.java.coveragePlugin", "jacoco"
+    }
+}

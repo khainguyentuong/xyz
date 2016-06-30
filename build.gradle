@@ -1,39 +1,28 @@
-buildscript {
-    repositories {
-        maven {
-            url("$artifactoryLibraryRepo")
-            credentials {
-                username = "$artifactoryUsername"
-                password = "$artifactoryPassword"
-            }
-        }
-    }
-    dependencies {
-		classpath("org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.0.1")
-    }
-}
+apply plugin: "project-report"
+apply from: file("$rootProject.projectDir/gradle/sonar.gradle")
 
-allprojects {
-	apply plugin: "base"
+subprojects {
+	apply plugin: "java"
+	apply plugin: "groovy"
 	apply plugin: "idea"
-	apply plugin: "maven-publish"
 	apply plugin: "project-report"
 	apply from: file("$rootProject.projectDir/gradle/versioning.gradle")
-	
+	apply from: file("$rootProject.projectDir/gradle/publishMaven.gradle")
 }
 
-apply plugin: "org.sonarqube"
-sonarqube {
-	properties {
-		property "sonar.host.url", "$sonarUrl"
-		property "sonar.login", "$sonarUsername"
-		property "sonar.password", "$sonarPassword"
-		property "sonar.projectName", "$project.name"
-		property "sonar.projectKey", "$group.$project.name"
-		property "sonar.links.ci", "$System.env.BUILD_URL"
-		property "sonar.links.scm", "$System.env.GIT_URL"
-		property "sonar.jacoco.reportPath", "$buildDir.name/jacoco.exec"
-		property "sonar.java.coveragePlugin", "jacoco"
+buildscript {
+	repositories {
+		maven {
+			url("$artifactoryLibraryRepo")
+			credentials {
+				username = "$artifactoryUsername"
+				password = "$artifactoryPassword"
+			}
+		}
+	}
+
+	dependencies {
+		classpath("org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.0.1")
 	}
 }
 
@@ -43,7 +32,7 @@ htmlDependencyReport {
     projects = project.allprojects
 }
 
-defaultTasks "clean", "build"
+defaultTasks "clean", "build", "publish", "htmlDependencyReport"
 
 task wrapper(type: Wrapper) {
     gradleVersion = "2.14"

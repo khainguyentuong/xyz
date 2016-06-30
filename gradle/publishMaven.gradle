@@ -1,34 +1,40 @@
-apply plugin: 'maven-publish'
-
-ext {
-    artifactoryReleaseRepoUrl = config.binaryRepository.releaseUrl
-    artifactoryUsername = project.hasProperty('artifactoryUsername') ? project.getProperty('artifactoryUsername') : null
-    artifactoryPassword = project.hasProperty('artifactoryPassword') ? project.getProperty('artifactoryPassword') : null
-}
+apply plugin: "maven-publish"
 
 publishing {
     publications {
-        toDoWebApp(MavenPublication) {
-            from components.web
-            artifactId 'todo-web'
+        plugin(MavenPublication) {
+            from components.java
+            groupId("$group.$rootProject.name")
+            artifactId("$project.name")
+            version("$version")
 
             pom.withXml {
                 def root = asNode()
-                root.appendNode('name', 'To Do application')
-                root.appendNode('description', 'A simple task management application.')
+                root.appendNode("name", "$project.name")
+                root.appendNode("description", "$project.name")
+                root.appendNode("inceptionYear", '2016')
+
+                def license = root.appendNode("licenses").appendNode("license")
+                license.appendNode("name", "The Apache Software License, Version 2.0")
+                license.appendNode("url", "http://www.apache.org/licenses/LICENSE-2.0.txt")
+                license.appendNode("distribution", "repo")
+
+                def developer = root.appendNode("developers").appendNode("developer")
+                developer.appendNode("id", "khainguyentuong")
+                developer.appendNode("name", "Khai Nguyen")
+                developer.appendNode("email", "khainguyentuong@gmail.com")
             }
         }
     }
 
     repositories {
         maven {
-            name 'remoteArtifactory'
-            url artifactoryReleaseRepoUrl
+            url("$artifactoryReleaseRepo")
 
             credentials {
-                username = artifactoryUsername                                 
-                password = artifactoryPassword
+                username = "$artifactoryUsername"
+                password = "$artifactoryPassword"
             }
-        }   
+        }
     }
 }
