@@ -1,0 +1,105 @@
+task applicationDockerfile (type: Dockerfile) {
+	from "java:openjdk-8"
+	add "$project.buildDir/libs/${project.name}-${project.version}.jar", "/"
+	workdir "/"
+    entrypoint "java -jar ${project.name}-${project.version}.jar"
+	if (project.dockerPort) {
+		expose project.dockerPort
+	}
+}
+
+task buildDockerImage (type: Exec) {
+	dependsOn applicationDockerfile
+	commandLine "docker", "build", "-t", "$registryServer/$project.registryRepo/$project.name:$version", "$applicationDockerfile.dockerDir"
+}
+
+task pushDockerImage (type: Exec) {
+	dependsOn buildDockerImage
+	commandLine "docker", "push", "$registryServer/$project.registryRepo/$project.name:$version"
+}
+
+task runDockerImage (type: Exec) {
+	dependsOn buildDockerImage
+	if (project.dockerPort) {
+	    commandLine "docker", "run", "--rm", "-i", "-p", "$project.dockerPort:$project.dockerPort", "--name", "$project.name", "$registryServer/$project.registryRepo/$project.name:$version"
+	}
+    else {
+	    commandLine "docker", "run", "--rm", "-i", "--name", "$project.name", "$registryServer/$project.registryRepo/$project.name:$version"
+	}
+}
+
+task runDocker (type: Exec) {
+	if (project.dockerPort) {
+	    commandLine "docker", "run", "--rm", "-i", "-p", "$project.dockerPort:$project.dockerPort", "--name", "$project.name", "$registryServer/$project.registryRepo/$project.name:$version"
+	}
+    else {
+	    commandLine "docker", "run", "--rm", "-i", "--name", "$project.name", "$registryServer/$project.registryRepo/$project.name:$version"
+	}
+}
+
+class Dockerfile extends DefaultTask {
+    def dockerfileInfo = ""
+    def dockerDir = "$project.buildDir/docker"
+    def dockerfileDestination = "$project.buildDir/docker/Dockerfile"
+    def filesToCopy = []
+
+    File getDockerfileDestination() {
+        project.file(dockerfileDestination)
+    }
+
+    def from(image="java") {
+        dockerfileInfo += "FROM $image\r\n"
+    }
+
+    def maintainer(contact) {
+        maintainer += "MAINTAINER $contact\r\n"
+    }
+
+    def add(sourceLocation, targetLocation) {
+        filesToCopy << sourceLocation
+        def file = project.file(sourceLocation)
+        dockerfileInfo += "ADD $file.name ${targetLocation}\r\n"
+    }
+
+    def run(command) {
+        dockerfileInfo += "RUN $command\r\n"
+    }
+
+    def volume(path) {
+        dockerfileInfo += "VOLUME $path\r\n"
+    }
+
+    def env(var, value) {
+        dockerfileInfo += "ENV $var $value\r\n"
+    }
+
+    def expose(port) {
+        dockerfileInfo += "EXPOSE $port\r\n"
+    }
+
+    def workdir(dir) {
+        dockerfileInfo += "WORKDIR $dir\r\n"
+    }
+
+    def cmd(command) {
+        dockerfileInfo += "CMD $command\r\n"
+    }
+
+    def entrypoint(command) {
+        dockerfileInfo += "ENTRYPOINT $command\r\n"
+    }
+
+    @TaskAction
+    def writeDockerfile() {
+        for (fileName in filesToCopy) {
+            def source = project.file(fileName)
+            def target = project.file("$dockerDir/$source.name")
+            target.parentFile.mkdirs()
+            target.delete()
+            target << source.bytes
+        }
+        def file = getDockerfileDestination()
+        file.parentFile.mkdirs()
+        file.write dockerfileInfo
+    }
+}

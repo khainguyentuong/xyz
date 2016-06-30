@@ -1,0 +1,38 @@
+apply plugin: "base"
+apply plugin: "org.flywaydb.flyway"
+
+buildscript {
+    repositories {
+        maven {
+            url("$artifactoryLibraryRepo")
+            credentials {
+                username = "$artifactoryUsername"
+                password = "$artifactoryPassword"
+            }
+        }
+    }
+
+    dependencies {
+        /*
+        classpath "com.h2database:h2:1.4.191"
+        classpath "com.oracle:ojdbc6:11.2.0"
+        */
+        classpath "mysql:mysql-connector-java:5.1.38"
+        classpath "org.flywaydb:flyway-gradle-plugin:4.0.2"
+    }
+}
+
+flyway {
+    /*
+    url="jdbc:h2:file:./target/test"
+	driver = "org.h2.Driver"
+	user = "sa"
+	*/
+
+    url = "jdbc:mysql://localhost:3306"
+    user = "builder"
+    password = "builder"
+    schemas = ["test"]
+    validateOnMigrate = "true"
+    sqlMigrationPrefix = "test_"
+}

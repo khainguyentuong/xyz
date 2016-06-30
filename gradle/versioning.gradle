@@ -1,0 +1,34 @@
+def props = new Properties()
+
+props.load(new FileInputStream("$rootProject.projectDir/version.properties"))
+props.each({
+    project.ext.set(it.key, it.value)
+})
+
+allprojects {
+    ext.buildTimestamp = new Date().format("yyyy-MM-dd HH:mm:ss")
+    project.version = new ProjectVersion("${MAJOR_RELEASE_ID}", "${MINOR_RELEASE_ID}", System.env.BUILD_NUMBER)
+}
+
+class ProjectVersion {
+    final String major
+    final String minor
+    final String build
+
+    ProjectVersion(String major, String minor, String build) {
+        this.major = major
+        this.minor = minor
+        this.build = build
+    }
+
+    @Override
+    String toString() {
+        String fullVersion = "$major.$minor"
+
+        if (build) {
+            fullVersion += ".$build"
+        }
+
+        fullVersion
+    }
+}
